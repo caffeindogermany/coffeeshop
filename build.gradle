@@ -1,0 +1,214 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+mainClassName = 'hello.HelloYou'
+
+// tag::repositories[]
+repositories {
+    mavenCentral()
+}
+// end::repositories[]
+
+// tag::jar[]
+jar {
+    archiveBaseName = 'gs-gradle'
+    archiveVersion =  '0.1.0'
+}
+// end::jar[]
+
+// tag::dependencies[]
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    implementation "joda-time:joda-time:2.2"
+    testImplementation "junit:junit:4.12"
+}
+// end::dependencies[]
+
+// tag::wrapper[]
+// end::wrapper[]
+/*
+buildscript {
+    ext {
+        springBootVersion = "2.4.4"
+    }
+    repositories {
+        maven {
+            url "${vtg_local_artifactory_contextUrl}/telemetry"
+            credentials {
+                username = "${vtg_local_artifactory_user}"
+                password = "${vtg_local_artifactory_password}"
+            }
+        }
+        maven {
+            url "${vtg_local_artifactory_contextUrl}/wamos-virtual"
+            credentials {
+                username = "${vtg_local_artifactory_user}"
+                password = "${vtg_local_artifactory_password}"
+            }
+        }
+    }
+    dependencies {
+        classpath "gradle.plugin.fi.evident.gradle.beanstalk:gradle-beanstalk-plugin:0.2.3"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    }
+}
+
+//plugins {
+//    id("com.vtg.itc")
+//    id("nebula.integtest")
+//}
+
+apply plugin: "fi.evident.beanstalk"
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'war'
+apply plugin: "io.spring.dependency-management"
+
+compileJava {
+    options.encoding = 'CP1252'
+}
+
+ext.majorVersion = 1.0
+version = "${project.name}-${project.majorVersion}.${System.getProperty("BUILD_NUMBER") ?: (new Date().format('yyyyMMddHHmmss')) + '-SNAPSHOT'}"
+
+jar {
+    baseName = "${project.name}"
+    version = "${project.majorVersion}.SNAPSHOT"
+}
+
+war {
+    enabled = true
+    baseName = "${project.name}"
+    version = "${project.majorVersion}.SNAPSHOT"
+    doLast() {
+        copy {
+            from(outputs.files)
+            into("${buildDir}/dist")
+
+            rename { String fileName ->
+                fileName.replace('SNAPSHOT', "${System.getProperty("BUILD_NUMBER") ?: (new Date().format('yyyyMMddHHmmss')) + '-SNAPSHOT'}")
+            }
+        }
+    }
+}
+
+beanstalk {
+    profile = 'service_deployment' // Only required if using .aws/credentials
+    s3Endpoint = "s3-eu-central-1.amazonaws.com"
+    beanstalkEndpoint = "elasticbeanstalk.eu-central-1.amazonaws.com"
+
+    deployments {
+        // Example to deploy to the same env
+        staging {
+            war = "${buildDir}/dist/${project.version}.war"
+            application = 'vtg-connect'
+            environment = 'vtg-connect-datastore-staging-2'
+        }
+    }
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    maven {
+        url "${vtg_local_artifactory_contextUrl}/telemetry"
+        credentials {
+            username = "${vtg_local_artifactory_user}"
+            password = "${vtg_local_artifactory_password}"
+        }
+    }
+    maven {
+        url "${vtg_local_artifactory_contextUrl}/libs-release"
+        credentials {
+            username = "${vtg_local_artifactory_user}"
+            password = "${vtg_local_artifactory_password}"
+        }
+    }
+    maven {
+        url "${vtg_local_artifactory_contextUrl}/libs-snapshot"
+        credentials {
+            username = "${vtg_local_artifactory_user}"
+            password = "${vtg_local_artifactory_password}"
+        }
+    }
+    maven {
+        url = uri("https://artifactory.myvtg.com/artifactory/global")
+        credentials {
+            username = "${myvtg_artifactory_username}"
+            password = "${myvtg_artifactory_password}"
+        }
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:Greenwich.SR1"
+    }
+}
+
+dependencies {
+    compile(group: 'vtg.connect', name: 'i4r-integration-aws-dynamodb', version: '1.0.8')
+    compile(group: 'vtg.connect', name: 'i4r-integration-globehopper-api', version: '1.3.6')
+
+    compile('org.springframework.boot:spring-boot-starter-actuator')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-security')
+    compile('org.springframework.boot:spring-boot-actuator-autoconfigure')
+    compile('org.springframework.boot:spring-boot-starter-data-rest')
+    compile('org.springframework.security:spring-security-config')
+
+    compile('org.springframework.cloud:spring-cloud-starter-aws')
+    compile('org.springframework.cloud:spring-cloud-aws-autoconfigure')
+
+    compile("com.vtg:dynamodb-sdk2-client:1.627")
+
+    compile('io.micrometer:micrometer-registry-cloudwatch')
+    compile('joda-time:joda-time:2.8')
+    compile('org.apache.commons:commons-lang3:3.9')
+    compile('commons-collections:commons-collections:3.2.2')
+
+    compile('io.springfox:springfox-boot-starter:3.0.0')
+
+    compile group: 'org.jboss.resteasy', name: 'resteasy-jaxrs', version: '3.1.4.Final'
+    compile group: 'org.jboss.resteasy', name: 'resteasy-client', version: '3.1.4.Final'
+    compile group: 'org.jboss.resteasy', name: 'resteasy-jackson-provider', version: '3.1.4.Final'
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
+    testCompile('org.junit.jupiter:junit-jupiter-params:5.7.0')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.7.0')
+    testImplementation("org.mockito:mockito-core:3.8.0")
+    testImplementation("org.mockito:mockito-inline:3.8.0") // Mockito.mockStatic
+    testCompile('org.mockito:mockito-junit-jupiter:3.8.0')
+    testCompile('net.bytebuddy:byte-buddy:1.10.13')
+
+//    integTestImplementation('com.vtg:integration-test-helpers:1.500')
+//    integTestImplementation("com.vtg:dynamodb-sdk2-client:1.627")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+//itc {
+//    containers {
+//       create("dynamoDb") {
+//            image = "927891228551.dkr.ecr.eu-central-1.amazonaws.com/dynalite:master"
+//            ports = Collections.singletonList(4567)
+//            livenessLogMessage = "Listening at"
+//        }
+//    }
+//}
+
+//tasks.named("integrationTest", Test.class) {
+//    useJUnitPlatform()
+
+//    dependsOn(tasks["startContainers"])
+//    finalizedBy(tasks["stopContainers"])
+//}
+*/
